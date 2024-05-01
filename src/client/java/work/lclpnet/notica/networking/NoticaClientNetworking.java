@@ -1,15 +1,12 @@
 package work.lclpnet.notica.networking;
 
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientLoginNetworkHandler;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.PacketCallbacks;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import work.lclpnet.notica.api.PlayerConfig;
@@ -41,45 +38,45 @@ public class NoticaClientNetworking {
     }
 
     public void register() {
-        ClientPlayNetworking.registerGlobalReceiver(PlaySongS2CPacket.TYPE, this::onPlaySong);
-        ClientPlayNetworking.registerGlobalReceiver(RespondSongS2CPacket.TYPE, this::onRespondSong);
-        ClientPlayNetworking.registerGlobalReceiver(StopSongBidiPacket.TYPE, this::onStopSong);
-        ClientPlayNetworking.registerGlobalReceiver(MusicOptionsS2CPacket.TYPE, this::onMusicOptionsSync);
+        ClientPlayNetworking.registerGlobalReceiver(PlaySongS2CPacket.ID, this::onPlaySong);
+        ClientPlayNetworking.registerGlobalReceiver(RespondSongS2CPacket.ID, this::onRespondSong);
+        ClientPlayNetworking.registerGlobalReceiver(StopSongBidiPacket.ID, this::onStopSong);
+        ClientPlayNetworking.registerGlobalReceiver(MusicOptionsS2CPacket.ID, this::onMusicOptionsSync);
 
         ClientLoginNetworking.registerGlobalReceiver(NoticaNetworking.VERSION_LOGIN_CHANNEL, this::onQueryVersion);
     }
 
-    private CompletableFuture<PacketByteBuf> onQueryVersion(MinecraftClient client, ClientLoginNetworkHandler handler, PacketByteBuf buf, Consumer<GenericFutureListener<? extends Future<? super Void>>> consumer) {
+    private CompletableFuture<PacketByteBuf> onQueryVersion(MinecraftClient client, ClientLoginNetworkHandler handler, PacketByteBuf buf, Consumer<PacketCallbacks> callbacksConsumer) {
         PacketByteBuf response = PacketByteBufs.create();
         response.writeVarInt(NoticaNetworking.PROTOCOL_VERSION);
 
         return CompletableFuture.completedFuture(response);
     }
 
-    private void onPlaySong(PlaySongS2CPacket packet, ClientPlayerEntity player, PacketSender sender) {
-        Identifier songId = packet.getSongId();
-        byte[] checksum = packet.getChecksum();
-        int startTick = packet.getStartTick();
+    private void onPlaySong(PlaySongS2CPacket payload, ClientPlayNetworking.Context context) {
+        Identifier songId = payload.getSongId();
+        byte[] checksum = payload.checksum();
+        int startTick = payload.getStartTick();
 
         PendingSong song = songRepository.get(checksum);
 
         if (song == null) {
-            acceptUnknownSong(packet, songId, checksum, startTick);
+            acceptUnknownSong(payload, songId, checksum, startTick);
         } else if (startTick < song.getStartTick()) {
             // the cached song is missing parts before its old start
-            acceptUnknownRegion(packet, song, songId);
+            acceptUnknownRegion(payload, song, songId);
         }
 
-        controller.playSong(songId, packet.getVolume(), startTick);
+        controller.playSong(songId, payload.getVolume(), startTick);
     }
 
     private void acceptUnknownSong(PlaySongS2CPacket packet, Identifier songId, byte[] checksum, int startTick) {
         logger.debug("Song {} ({}) is not cached, requesting it...", songId, ByteHelper.toHexString(checksum, 32));
 
         // song is not cached, create a new instance
-        PendingSong song = new PendingSong(packet.getHeader(), startTick);
+        PendingSong song = new PendingSong(packet.header(), startTick);
 
-        SongSlice slice = packet.getSlice();
+        SongSlice slice = packet.slice();
 
         logger.debug("Got initial slice {} for song {}", slice, songId);
 
@@ -88,7 +85,7 @@ public class NoticaClientNetworking {
         if (song.loopConfig().enabled() && startTick > 0) {
             // songs with looping enabled that start with an offset need to be fetched completely
             request(songId, 0, 0);
-        } else if (!packet.isLast()) {
+        } else if (!packet.last()) {
             // request next song part
             requestNext(songId, slice);
         }
@@ -97,31 +94,30 @@ public class NoticaClientNetworking {
     }
 
     private void acceptUnknownRegion(PlaySongS2CPacket packet, PendingSong song, Identifier songId) {
-        SongSlice slice = packet.getSlice();
+        SongSlice slice = packet.slice();
 
         song.accept(slice);
 
-        if (packet.isLast()) return;
+        if (packet.last()) return;
 
         logger.debug("Cached song is missing parts, requesting the song from the beginning...");
 
         request(songId, 0, 0);
     }
 
-    private void onStopSong(StopSongBidiPacket packet, ClientPlayerEntity player, PacketSender sender) {
-        Identifier songId = packet.getSongId();
-
+    private void onStopSong(StopSongBidiPacket payload, ClientPlayNetworking.Context context) {
+        Identifier songId = payload.songId();
         controller.stopSong(songId);
     }
 
-    private void onMusicOptionsSync(MusicOptionsS2CPacket packet, ClientPlayerEntity player, PacketSender sender) {
-        PlayerConfig config = packet.getConfig();
+    private void onMusicOptionsSync(MusicOptionsS2CPacket payload, ClientPlayNetworking.Context context) {
+        PlayerConfig config = payload.config();
         playerConfig.copyClient(config);
     }
 
-    private void onRespondSong(RespondSongS2CPacket packet, ClientPlayerEntity player, PacketSender sender) {
-        Identifier songId = packet.getSongId();
-        SongSlice slice = packet.getSlice();
+    private void onRespondSong(RespondSongS2CPacket payload, ClientPlayNetworking.Context context) {
+        Identifier songId = payload.songId();
+        SongSlice slice = payload.slice();
 
         PendingSong song = songRepository.get(songId);
 
@@ -134,7 +130,7 @@ public class NoticaClientNetworking {
 
         song.accept(slice);
 
-        if (packet.isLast()) {
+        if (payload.last()) {
             logger.debug("Song slice response was the last one. Song request for song {} completed", songId);
         } else {
             requestNext(songId, slice);
@@ -146,7 +142,7 @@ public class NoticaClientNetworking {
     }
 
     private void request(Identifier songId, int tickOffset, int layerOffset) {
-        if (!ClientPlayNetworking.canSend(RequestSongC2SPacket.TYPE)) {
+        if (!ClientPlayNetworking.canSend(RequestSongC2SPacket.ID)) {
             logger.debug("Server didn't declare the ability to accept song requests, aborting song request");
             return;
         }

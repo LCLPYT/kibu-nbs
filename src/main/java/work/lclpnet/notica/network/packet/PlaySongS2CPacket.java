@@ -1,88 +1,42 @@
 package work.lclpnet.notica.network.packet;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 import work.lclpnet.notica.NoticaInit;
 import work.lclpnet.notica.api.SongSlice;
+import work.lclpnet.notica.network.NoticaPacketCodecs;
 import work.lclpnet.notica.network.SongHeader;
-import work.lclpnet.notica.network.SongSlicer;
+import work.lclpnet.notica.network.SongPlayOptions;
 
-public class PlaySongS2CPacket implements FabricPacket {
+public record PlaySongS2CPacket(SongPlayOptions playOptions, SongHeader header, SongSlice slice, boolean last, byte[] checksum) implements CustomPayload {
 
-    public static final PacketType<PlaySongS2CPacket> TYPE =
-            PacketType.create(NoticaInit.identifier("play"), PlaySongS2CPacket::new);
+    public static final Id<PlaySongS2CPacket> ID = new Id<>(NoticaInit.identifier("play"));
 
-    private final Identifier songId;
-    private final float volume;
-    private final byte[] checksum;
-    private final SongHeader header;
-    private final boolean last;
-    private final SongSlice slice;
-    private final int startTick;
-
-    public PlaySongS2CPacket(Identifier songId, float volume, int startTick, byte[] checksum, SongHeader header, boolean last, SongSlice slice) {
-        this.songId = songId;
-        this.volume = volume;
-        this.checksum = checksum;
-        this.header = header;
-        this.last = last;
-        this.slice = slice;
-        this.startTick = startTick;
-    }
-
-    public PlaySongS2CPacket(PacketByteBuf buf) {
-        this.songId = buf.readIdentifier();
-        this.volume = buf.readFloat();
-        this.startTick = buf.readInt();
-        this.checksum = buf.readByteArray();
-        this.header = new SongHeader(buf);
-        this.last = buf.readBoolean();
-        this.slice = SongSlicer.readSlice(buf);
-    }
+    public static final PacketCodec<PacketByteBuf, PlaySongS2CPacket> CODEC = PacketCodec.tuple(
+            SongPlayOptions.PACKET_CODEC, PlaySongS2CPacket::playOptions,
+            SongHeader.PACKET_CODEC, PlaySongS2CPacket::header,
+            NoticaPacketCodecs.SONG_SLICE_PACKET_CODEC, PlaySongS2CPacket::slice,
+            PacketCodecs.BOOL, PlaySongS2CPacket::last,
+            PacketCodecs.BYTE_ARRAY, PlaySongS2CPacket::checksum,
+            PlaySongS2CPacket::new);
 
     @Override
-    public void write(PacketByteBuf buf) {
-        buf.writeIdentifier(songId);
-        buf.writeFloat(volume);
-        buf.writeInt(startTick);
-        buf.writeByteArray(checksum);
-        header.write(buf);
-        buf.writeBoolean(last);
-        SongSlicer.writeSlice(buf, slice);
-    }
-
-    @Override
-    public PacketType<?> getType() {
-        return TYPE;
+    public Id<? extends CustomPayload> getId() {
+        return ID;
     }
 
     public Identifier getSongId() {
-        return songId;
+        return playOptions.songId();
     }
 
     public float getVolume() {
-        return volume;
+        return playOptions.volume();
     }
 
     public int getStartTick() {
-        return startTick;
-    }
-
-    public byte[] getChecksum() {
-        return checksum;
-    }
-
-    public SongHeader getHeader() {
-        return header;
-    }
-
-    public SongSlice getSlice() {
-        return slice;
-    }
-
-    public boolean isLast() {
-        return last;
+        return playOptions.startTick();
     }
 }

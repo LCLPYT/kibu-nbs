@@ -1,47 +1,22 @@
 package work.lclpnet.notica.network.packet;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.packet.CustomPayload;
 import work.lclpnet.notica.NoticaInit;
 import work.lclpnet.notica.api.PlayerConfig;
-import work.lclpnet.notica.util.PlayerConfigEntry;
+import work.lclpnet.notica.network.NoticaPacketCodecs;
 
-public class MusicOptionsS2CPacket implements FabricPacket {
-    public static final PacketType<MusicOptionsS2CPacket> TYPE =
-            PacketType.create(NoticaInit.identifier("options"), MusicOptionsS2CPacket::new);
+public record MusicOptionsS2CPacket(PlayerConfig config) implements CustomPayload {
 
-    private final PlayerConfig config;
+    public static final Id<MusicOptionsS2CPacket> ID = new Id<>(NoticaInit.identifier("options"));
 
-    public MusicOptionsS2CPacket(PlayerConfig config) {
-        this.config = config;
-    }
-
-    public MusicOptionsS2CPacket(PacketByteBuf buf) {
-        this.config = readConfig(buf);
-    }
+    public static PacketCodec<PacketByteBuf, MusicOptionsS2CPacket> CODEC = PacketCodec.tuple(
+            NoticaPacketCodecs.PLAYER_CONFIG_PACKET_CODEC, MusicOptionsS2CPacket::config,
+            MusicOptionsS2CPacket::new);
 
     @Override
-    public void write(PacketByteBuf buf) {
-        buf.writeFloat(config.getVolume());
-        // no need to write extended range support as clients automatically support it
-    }
-
-    private static PlayerConfig readConfig(PacketByteBuf buf) {
-        PlayerConfigEntry config = new PlayerConfigEntry();
-
-        float volume = buf.readFloat();
-        config.setVolume(volume);
-
-        return config;
-    }
-
-    @Override
-    public PacketType<?> getType() {
-        return TYPE;
-    }
-
-    public PlayerConfig getConfig() {
-        return config;
+    public Id<? extends CustomPayload> getId() {
+        return ID;
     }
 }

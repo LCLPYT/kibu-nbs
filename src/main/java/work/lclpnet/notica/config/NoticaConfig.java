@@ -6,6 +6,7 @@ import work.lclpnet.config.json.JsonConfig;
 import work.lclpnet.config.json.JsonConfigFactory;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 public class NoticaConfig implements JsonConfig {
@@ -24,7 +25,7 @@ public class NoticaConfig implements JsonConfig {
             String urlString = json.getString("extra-notes-pack-url");
 
             try {
-                this.extraNotesPackUrl = new URL(urlString);
+                this.extraNotesPackUrl = URI.create(urlString).toURL();
             } catch (MalformedURLException e) {
                 this.extraNotesPackUrl = null;
             }
@@ -33,7 +34,7 @@ public class NoticaConfig implements JsonConfig {
 
     private void setDefaultUrl() {
         try {
-            this.extraNotesPackUrl = new URL("https://github.com/LCLPYT/notica/releases/download/1.0.0%2B1.20.4/extranotes.zip");
+            this.extraNotesPackUrl = URI.create("https://github.com/LCLPYT/notica/releases/download/1.0.0%2B1.20.4/extranotes.zip").toURL();
         } catch (MalformedURLException e) {
             this.extraNotesPackUrl = null;
         }

@@ -1,52 +1,24 @@
 package work.lclpnet.notica.network.packet;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 import work.lclpnet.notica.NoticaInit;
 
-public class RequestSongC2SPacket implements FabricPacket {
+public record RequestSongC2SPacket(Identifier songId, int tickOffset, int layerOffset) implements CustomPayload {
 
-    public static final PacketType<RequestSongC2SPacket> TYPE =
-            PacketType.create(NoticaInit.identifier("request"), RequestSongC2SPacket::new);
+    public static final Id<RequestSongC2SPacket> ID = new Id<>(NoticaInit.identifier("request"));
 
-    private final Identifier songId;
-    private final int tickOffset, layerOffset;
-
-    public RequestSongC2SPacket(Identifier songId, int tickOffset, int layerOffset) {
-        this.songId = songId;
-        this.tickOffset = tickOffset;
-        this.layerOffset = layerOffset;
-    }
-
-    public RequestSongC2SPacket(PacketByteBuf buf) {
-        this.songId = buf.readIdentifier();
-        this.tickOffset = buf.readInt();
-        this.layerOffset = buf.readInt();
-    }
+    public static final PacketCodec<PacketByteBuf, RequestSongC2SPacket> CODEC = PacketCodec.tuple(
+            Identifier.PACKET_CODEC, RequestSongC2SPacket::songId,
+            PacketCodecs.VAR_INT, RequestSongC2SPacket::tickOffset,
+            PacketCodecs.VAR_INT, RequestSongC2SPacket::layerOffset,
+            RequestSongC2SPacket::new);
 
     @Override
-    public void write(PacketByteBuf buf) {
-        buf.writeIdentifier(songId);
-        buf.writeInt(tickOffset);
-        buf.writeInt(layerOffset);
-    }
-
-    @Override
-    public PacketType<?> getType() {
-        return TYPE;
-    }
-
-    public Identifier getSongId() {
-        return songId;
-    }
-
-    public int getTickOffset() {
-        return tickOffset;
-    }
-
-    public int getLayerOffset() {
-        return layerOffset;
+    public Id<? extends CustomPayload> getId() {
+        return ID;
     }
 }

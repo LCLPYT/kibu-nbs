@@ -11,6 +11,7 @@ import work.lclpnet.notica.impl.NoticaImpl;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -47,7 +48,7 @@ public class NoticaServerPackManager {
 
         UUID packUuid = UUID.nameUUIDFromBytes(urlString.getBytes(StandardCharsets.UTF_8));
         var prompt = translations.translateText(player, "notica.music.server_pack_prompt").formatted(GREEN);
-        var packet = new ResourcePackSendS2CPacket(packUuid, urlString, "", false, prompt);
+        var packet = new ResourcePackSendS2CPacket(packUuid, urlString, "", false, Optional.of(prompt));
 
         this.packUuid = packUuid;
         player.networkHandler.sendPacket(packet);

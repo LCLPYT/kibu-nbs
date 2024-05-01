@@ -1,55 +1,26 @@
 package work.lclpnet.notica.network.packet;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 import work.lclpnet.notica.NoticaInit;
 import work.lclpnet.notica.api.SongSlice;
-import work.lclpnet.notica.network.SongSlicer;
+import work.lclpnet.notica.network.NoticaPacketCodecs;
 
-public class RespondSongS2CPacket implements FabricPacket {
+public record RespondSongS2CPacket(Identifier songId, SongSlice slice, boolean last) implements CustomPayload {
 
-    public static final PacketType<RespondSongS2CPacket> TYPE =
-            PacketType.create(NoticaInit.identifier("respond"), RespondSongS2CPacket::new);
+    public static final Id<RespondSongS2CPacket> ID = new Id<>(NoticaInit.identifier("respond"));
 
-    private final Identifier songId;
-    private final SongSlice slice;
-    private final boolean last;
-
-    public RespondSongS2CPacket(Identifier songId, SongSlice slice, boolean last) {
-        this.songId = songId;
-        this.slice = slice;
-        this.last = last;
-    }
-
-    public RespondSongS2CPacket(PacketByteBuf buf) {
-        this.songId = buf.readIdentifier();
-        this.last = buf.readBoolean();
-        this.slice = SongSlicer.readSlice(buf);
-    }
+    public static final PacketCodec<PacketByteBuf, RespondSongS2CPacket> CODEC = PacketCodec.tuple(
+            Identifier.PACKET_CODEC, RespondSongS2CPacket::songId,
+            NoticaPacketCodecs.SONG_SLICE_PACKET_CODEC, RespondSongS2CPacket::slice,
+            PacketCodecs.BOOL, RespondSongS2CPacket::last,
+            RespondSongS2CPacket::new);
 
     @Override
-    public void write(PacketByteBuf buf) {
-        buf.writeIdentifier(songId);
-        buf.writeBoolean(last);
-        SongSlicer.writeSlice(buf, slice);
-    }
-
-    @Override
-    public PacketType<?> getType() {
-        return TYPE;
-    }
-
-    public Identifier getSongId() {
-        return songId;
-    }
-
-    public SongSlice getSlice() {
-        return slice;
-    }
-
-    public boolean isLast() {
-        return last;
+    public Id<? extends CustomPayload> getId() {
+        return ID;
     }
 }

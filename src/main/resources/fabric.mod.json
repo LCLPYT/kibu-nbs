@@ -31,13 +31,14 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.15.3",
-		"minecraft": "1.20.4",
-		"java": ">=17",
+		"fabricloader": ">=0.15.10",
+		"minecraft": "~1.20.5",
+		"java": ">=21",
 		"fabric-api": "*",
 		"kibu-hook-api": ">=1.3.0",
-		"kibu-hooks": ">=0.43.0",
-		"kibu-translation-api": ">=0.11.1"
+		"kibu-hooks": ">=0.49.0",
+		"kibu-translation-api": ">=0.14.0",
+		"kibu-access-lib": ">=0.12.0"
 	},
 	"suggests": {}
 }

@@ -75,7 +75,7 @@ public class ClientMusicBackend {
     }
 
     private void notifySongStopped(Identifier songId) {
-        if (!ClientPlayNetworking.canSend(StopSongBidiPacket.TYPE)) return;
+        if (!ClientPlayNetworking.canSend(StopSongBidiPacket.ID)) return;
 
         var packet = new StopSongBidiPacket(songId);
         ClientPlayNetworking.send(packet);

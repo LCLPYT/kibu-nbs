@@ -10,6 +10,7 @@ import work.lclpnet.notica.api.*;
 import work.lclpnet.notica.api.SongPlayback;
 import work.lclpnet.notica.api.data.Song;
 import work.lclpnet.notica.network.SongHeader;
+import work.lclpnet.notica.network.SongPlayOptions;
 import work.lclpnet.notica.network.SongSlicer;
 import work.lclpnet.notica.network.packet.PlaySongS2CPacket;
 import work.lclpnet.notica.network.packet.StopSongBidiPacket;
@@ -85,7 +86,8 @@ public class ServerSongHandle implements SongHandle, PlayerStoppedPlaybackListen
         SongSlice slice = SongSlicer.sliceSeconds(song, startTick, 5);
         boolean finished = SongSlicer.isFinished(song, slice);
 
-        var packet = new PlaySongS2CPacket(checkedSong.id(), volume, startTick, checkedSong.checksum(), header, finished, slice);
+        var options = new SongPlayOptions(checkedSong.id(), volume, startTick);
+        var packet = new PlaySongS2CPacket(options, header, slice, finished, checkedSong.checksum());
         ServerPlayNetworking.send(player, packet);
     }
 

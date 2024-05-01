@@ -14,9 +14,7 @@ import work.lclpnet.notica.api.SongSlice;
 import work.lclpnet.notica.api.data.Song;
 import work.lclpnet.notica.impl.NoticaImpl;
 import work.lclpnet.notica.mixin.ServerLoginNetworkHandlerAccessor;
-import work.lclpnet.notica.network.packet.RequestSongC2SPacket;
-import work.lclpnet.notica.network.packet.RespondSongS2CPacket;
-import work.lclpnet.notica.network.packet.StopSongBidiPacket;
+import work.lclpnet.notica.network.packet.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,17 +38,26 @@ public class NoticaNetworking {
 
     public void register() {
         ServerLoginNetworking.registerGlobalReceiver(VERSION_LOGIN_CHANNEL, this::receiveLoginVersion);
-        ServerPlayNetworking.registerGlobalReceiver(RequestSongC2SPacket.TYPE, this::onRequestSong);
-        ServerPlayNetworking.registerGlobalReceiver(StopSongBidiPacket.TYPE, this::onSongStopped);
+
+        var playS2C = PayloadTypeRegistry.playS2C();
+        playS2C.register(MusicOptionsS2CPacket.ID, MusicOptionsS2CPacket.CODEC);
+        playS2C.register(PlaySongS2CPacket.ID, PlaySongS2CPacket.CODEC);
+        playS2C.register(RespondSongS2CPacket.ID, RespondSongS2CPacket.CODEC);
+        playS2C.register(StopSongBidiPacket.ID, StopSongBidiPacket.CODEC);
+
+        var playC2S = PayloadTypeRegistry.playC2S();
+        playC2S.register(RequestSongC2SPacket.ID, RequestSongC2SPacket.CODEC);
+        playC2S.register(StopSongBidiPacket.ID, StopSongBidiPacket.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(RequestSongC2SPacket.ID, this::onRequestSong);
+        ServerPlayNetworking.registerGlobalReceiver(StopSongBidiPacket.ID, this::onSongStopped);
 
         ServerLoginConnectionEvents.QUERY_START.register(this::onLoginStart);
-
         ServerLoginConnectionEvents.DISCONNECT.register(this::onLoginDisconnect);
-
         PlayerConnectionHooks.QUIT.register(this::onQuit);
     }
 
-    private void onLoginStart(ServerLoginNetworkHandler handler, MinecraftServer server, PacketSender sender, ServerLoginNetworking.LoginSynchronizer synchronizer) {
+    private void onLoginStart(ServerLoginNetworkHandler handler, MinecraftServer server, LoginPacketSender sender, ServerLoginNetworking.LoginSynchronizer synchronizer) {
         // send notica protocol version query
         sender.sendPacket(VERSION_LOGIN_CHANNEL, PacketByteBufs.empty());
     }
@@ -84,7 +91,8 @@ public class NoticaNetworking {
         onQuit(profile.getId());
     }
 
-    private void onRequestSong(RequestSongC2SPacket packet, ServerPlayerEntity player, PacketSender sender) {
+    private void onRequestSong(RequestSongC2SPacket payload, ServerPlayNetworking.Context context) {
+        ServerPlayerEntity player = context.player();
         PlayerData data = getData(player);
 
         if (data.throttle()) {
@@ -92,7 +100,7 @@ public class NoticaNetworking {
             return;
         }
 
-        Identifier songId = packet.getSongId();
+        Identifier songId = payload.songId();
         NoticaImpl instance = NoticaImpl.getInstance(player.getServer());
         var optSong = instance.getSong(songId);
 
@@ -103,8 +111,8 @@ public class NoticaNetworking {
 
         Song song = optSong.get();
 
-        int tickOffset = packet.getTickOffset();
-        int layerOffset = packet.getLayerOffset();
+        int tickOffset = payload.tickOffset();
+        int layerOffset = payload.layerOffset();
 
         logger.debug("Player {} requested song slice {}, {} for song {}", player.getNameForScoreboard(), tickOffset, layerOffset, songId);
 
@@ -127,8 +135,9 @@ public class NoticaNetworking {
         ServerPlayNetworking.send(player, responsePacket);
     }
 
-    private void onSongStopped(StopSongBidiPacket packet, ServerPlayerEntity player, PacketSender sender) {
-        Identifier songId = packet.getSongId();
+    private void onSongStopped(StopSongBidiPacket payload, ServerPlayNetworking.Context context) {
+        ServerPlayerEntity player = context.player();
+        Identifier songId = payload.songId();
 
         NoticaImpl instance = NoticaImpl.getInstance(player.getServer());
 

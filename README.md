@@ -66,7 +66,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation 'work.lclpnet.mods:notica:1.0.0+1.20.4'  // replace with your version
+    modImplementation 'work.lclpnet.mods:notica:1.1.3+1.20.6'  // replace with your version
 }
 ```
 
