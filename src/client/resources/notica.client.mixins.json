@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "work.lclpnet.notica.client",
+  "package": "work.lclpnet.notica.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "injectors": {
     "defaultRequire": 1

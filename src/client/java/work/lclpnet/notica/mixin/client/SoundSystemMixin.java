@@ -1,4 +1,4 @@
-package work.lclpnet.notica.client;
+package work.lclpnet.notica.mixin.client;
 
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.sound.SoundSystem;

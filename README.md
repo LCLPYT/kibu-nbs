@@ -76,7 +76,7 @@ If you want to load a song from a file specified by a `Path`, you can use:
 
 ```java
 Path path = Path.of("path", "to", "song.nbs");
-Identifier id = new Identifier("myMod", "foo");
+Identifier id = Identifier.of("myMod", "foo");
 CheckedSong song;
 
 try (var in = Files.newInputStream(path)) {

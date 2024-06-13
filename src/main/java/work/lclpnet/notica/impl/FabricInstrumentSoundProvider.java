@@ -88,7 +88,7 @@ public class FabricInstrumentSoundProvider implements InstrumentSoundProvider {
         }
 
         // create a new sound event
-        Identifier id = new Identifier(name);
+        Identifier id = Identifier.of(name);
 
         SoundEventAccessor access = (SoundEventAccessor) sound;
 
