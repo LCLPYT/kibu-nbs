@@ -4,7 +4,7 @@ import net.minecraft.network.packet.c2s.common.ResourcePackStatusC2SPacket;
 import net.minecraft.network.packet.s2c.common.ResourcePackSendS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.slf4j.Logger;
-import work.lclpnet.kibu.translate.TranslationService;
+import work.lclpnet.kibu.translate.Translations;
 import work.lclpnet.notica.config.ConfigAccess;
 import work.lclpnet.notica.impl.NoticaImpl;
 
@@ -21,13 +21,13 @@ import static net.minecraft.util.Formatting.RED;
 public class NoticaServerPackManager {
 
     private final ConfigAccess configAccess;
-    private final TranslationService translations;
+    private final Translations translations;
     private final Logger logger;
     private final Set<UUID> requesting = new HashSet<>();
     private final Set<UUID> installed = new HashSet<>();
     private UUID packUuid = null;
 
-    public NoticaServerPackManager(ConfigAccess configAccess, TranslationService translations, Logger logger) {
+    public NoticaServerPackManager(ConfigAccess configAccess, Translations translations, Logger logger) {
         this.configAccess = configAccess;
         this.translations = translations;
         this.logger = logger;

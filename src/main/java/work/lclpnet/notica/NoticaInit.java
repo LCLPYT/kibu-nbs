@@ -9,12 +9,13 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import work.lclpnet.kibu.hook.player.PlayerConnectionHooks;
+import work.lclpnet.kibu.translate.Translations;
+import work.lclpnet.kibu.translate.util.ModTranslations;
 import work.lclpnet.notica.cmd.MusicCommand;
 import work.lclpnet.notica.config.ConfigManager;
 import work.lclpnet.notica.event.ResourcePackStatusCallback;
 import work.lclpnet.notica.impl.NoticaImpl;
 import work.lclpnet.notica.network.NoticaNetworking;
-import work.lclpnet.kibu.translate.TranslationService;
 import work.lclpnet.notica.util.NoticaServerPackManager;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class NoticaInit implements ModInitializer {
 
 		NoticaImpl.configure(songsDir, playerConfigsDir, LOGGER);
 
-		TranslationService translations = getTranslationService();
+		Translations translations = getTranslations();
 		ConfigManager configManager = getConfigManager(configPath);
 
 		serverPackManager = new NoticaServerPackManager(configManager, translations, LOGGER);
@@ -70,9 +71,9 @@ public class NoticaInit implements ModInitializer {
 		NoticaImpl.getInstance(newPlayer.getServer()).onPlayerChange(newPlayer);
 	}
 
-	private static TranslationService getTranslationService() {
-		var result = ModTranslations.load(LOGGER);
-		TranslationService translations = result.translations();
+	private static Translations getTranslations() {
+		var result = ModTranslations.fromAssets(NoticaInit.MOD_ID, LOGGER);
+		Translations translations = result.translations();
 
 		result.whenLoaded().thenRun(() -> LOGGER.info("{} translations loaded.", MOD_ID));
 

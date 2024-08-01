@@ -16,7 +16,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
-import work.lclpnet.kibu.translate.TranslationService;
+import work.lclpnet.kibu.translate.Translations;
 import work.lclpnet.kibu.translate.text.RootText;
 import work.lclpnet.notica.Notica;
 import work.lclpnet.notica.api.SongHandle;
@@ -43,11 +43,11 @@ import static work.lclpnet.kibu.translate.text.FormatWrapper.styled;
 public class MusicCommand {
 
     private final Path songDirectory;
-    private final TranslationService translations;
+    private final Translations translations;
     private final NoticaServerPackManager serverPackManager;
     private final Logger logger;
 
-    public MusicCommand(Path songDirectory, TranslationService translations, NoticaServerPackManager serverPackManager, Logger logger) {
+    public MusicCommand(Path songDirectory, Translations translations, NoticaServerPackManager serverPackManager, Logger logger) {
         this.songDirectory = songDirectory;
         this.translations = translations;
         this.serverPackManager = serverPackManager;
