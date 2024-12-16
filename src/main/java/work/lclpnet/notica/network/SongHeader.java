@@ -43,7 +43,7 @@ public record SongHeader(Info info, LoopConfig loopConfig, Index<? extends Layer
         public static final PacketCodec<PacketByteBuf, Info> PACKET_CODEC = PacketCodec.tuple(
                 PacketCodecs.INTEGER, Info::durationTicks,
                 PacketCodecs.FLOAT, Info::ticksPerSecond,
-                PacketCodecs.BOOL, Info::stereo,
+                PacketCodecs.BOOLEAN, Info::stereo,
                 PacketCodecs.BYTE, Info::signature,
                 Info::new);
 

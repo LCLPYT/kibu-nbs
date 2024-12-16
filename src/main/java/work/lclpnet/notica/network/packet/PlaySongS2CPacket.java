@@ -19,7 +19,7 @@ public record PlaySongS2CPacket(SongPlayOptions playOptions, SongHeader header, 
             SongPlayOptions.PACKET_CODEC, PlaySongS2CPacket::playOptions,
             SongHeader.PACKET_CODEC, PlaySongS2CPacket::header,
             NoticaPacketCodecs.SONG_SLICE_PACKET_CODEC, PlaySongS2CPacket::slice,
-            PacketCodecs.BOOL, PlaySongS2CPacket::last,
+            PacketCodecs.BOOLEAN, PlaySongS2CPacket::last,
             PacketCodecs.BYTE_ARRAY, PlaySongS2CPacket::checksum,
             PlaySongS2CPacket::new);
 

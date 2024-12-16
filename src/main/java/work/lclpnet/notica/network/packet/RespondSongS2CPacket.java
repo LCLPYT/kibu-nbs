@@ -16,7 +16,7 @@ public record RespondSongS2CPacket(Identifier songId, SongSlice slice, boolean l
     public static final PacketCodec<PacketByteBuf, RespondSongS2CPacket> CODEC = PacketCodec.tuple(
             Identifier.PACKET_CODEC, RespondSongS2CPacket::songId,
             NoticaPacketCodecs.SONG_SLICE_PACKET_CODEC, RespondSongS2CPacket::slice,
-            PacketCodecs.BOOL, RespondSongS2CPacket::last,
+            PacketCodecs.BOOLEAN, RespondSongS2CPacket::last,
             RespondSongS2CPacket::new);
 
     @Override

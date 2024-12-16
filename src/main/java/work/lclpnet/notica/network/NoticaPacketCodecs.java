@@ -31,7 +31,7 @@ public class NoticaPacketCodecs {
             });
 
     public static final PacketCodec<PacketByteBuf, LoopConfig> LOOP_CONFIG_PACKET_CODEC = PacketCodec.tuple(
-            PacketCodecs.BOOL, LoopConfig::enabled,
+            PacketCodecs.BOOLEAN, LoopConfig::enabled,
             PacketCodecs.INTEGER, LoopConfig::loopCount,
             PacketCodecs.INTEGER, LoopConfig::loopStartTick,
             ImmutableLoopConfig::new);
