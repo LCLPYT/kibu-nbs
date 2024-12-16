@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import work.lclpnet.notica.api.InstrumentSoundProvider;
 import work.lclpnet.notica.api.data.CustomInstrument;
-import work.lclpnet.notica.mixin.SoundEventAccessor;
 import work.lclpnet.notica.util.NoteHelper;
 
 import java.util.HashMap;
@@ -28,7 +27,7 @@ public class FabricInstrumentSoundProvider implements InstrumentSoundProvider {
     }
 
     public FabricInstrumentSoundProvider(DynamicRegistryManager registryManager) {
-        this(registryManager.get(RegistryKeys.SOUND_EVENT));
+        this(registryManager.getOrThrow(RegistryKeys.SOUND_EVENT));
     }
 
     public FabricInstrumentSoundProvider(Registry<SoundEvent> soundRegistry) {
@@ -80,7 +79,7 @@ public class FabricInstrumentSoundProvider implements InstrumentSoundProvider {
     @NotNull
     @Override
     public SoundEvent getExtendedSound(final @NotNull SoundEvent sound, byte key, short pitch) {
-        String name = NoteHelper.getExtendedSoundName(sound.getId().toString(), key, pitch);
+        String name = NoteHelper.getExtendedSoundName(sound.id().toString(), key, pitch);
         SoundEvent extendedSound = this.extended.get(name);
 
         if (extendedSound != null) {
@@ -90,13 +89,9 @@ public class FabricInstrumentSoundProvider implements InstrumentSoundProvider {
         // create a new sound event
         Identifier id = Identifier.of(name);
 
-        SoundEventAccessor access = (SoundEventAccessor) sound;
-
-        if (access.isStaticDistance()) {
-            extendedSound = SoundEvent.of(id, access.getDistanceToTravel());
-        } else {
-            extendedSound = SoundEvent.of(id);
-        }
+        extendedSound = sound.fixedRange()
+                .map(fixedRanged -> SoundEvent.of(id, fixedRanged))
+                .orElseGet(() -> SoundEvent.of(id));
 
         this.extended.put(name, extendedSound);
 

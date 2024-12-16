@@ -52,7 +52,7 @@ public class ClientBasicNotePlayer implements NotePlayer {
         float volume = layer.volume() * note.velocity() * 1e-4f * this.volume * playerConfig.getVolume();
         float panning = ((layer.panning() + note.panning()) * 0.5f - 100) / 100;  // [-1, 1], 0=center
 
-        var instance = new NbsSoundInstance(sound.getId(), SoundCategory.RECORDS, volume, openAlPitch,
+        var instance = new NbsSoundInstance(sound.id(), SoundCategory.RECORDS, volume, openAlPitch,
                 player.getRandom(), false, 0, SoundInstance.AttenuationType.NONE, panning, 0, 0, true);
 
         client.executeSync(() -> client.getSoundManager().play(instance));

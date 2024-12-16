@@ -4,8 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ServerCommonNetworkHandlerMixin",
-    "ServerLoginNetworkHandlerAccessor",
-    "SoundEventAccessor"
+    "ServerLoginNetworkHandlerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
