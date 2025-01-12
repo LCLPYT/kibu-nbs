@@ -7,12 +7,15 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -35,10 +38,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
+import static me.lucko.fabric.api.permissions.v0.Permissions.require;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 import static net.minecraft.util.Formatting.*;
 import static work.lclpnet.kibu.translate.text.FormatWrapper.styled;
+import static work.lclpnet.notica.NoticaInit.permission;
 
 public class MusicCommand {
 
@@ -46,12 +51,16 @@ public class MusicCommand {
     private final Translations translations;
     private final NoticaServerPackManager serverPackManager;
     private final Logger logger;
+    private final SimpleCommandExceptionType errorNoPermissionPlayOther, errorNoPermissionStopOther;
 
     public MusicCommand(Path songDirectory, Translations translations, NoticaServerPackManager serverPackManager, Logger logger) {
         this.songDirectory = songDirectory;
         this.translations = translations;
         this.serverPackManager = serverPackManager;
         this.logger = logger;
+
+        errorNoPermissionPlayOther = new SimpleCommandExceptionType(Text.translatableWithFallback("notica.music.play.no_permission_other", "You don't have permission to play music to other players"));
+        errorNoPermissionStopOther = new SimpleCommandExceptionType(Text.translatableWithFallback("notica.music.stop.no_permission_other", "You don't have permission to stop music for other players"));
     }
 
     public void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -61,7 +70,7 @@ public class MusicCommand {
     private LiteralArgumentBuilder<ServerCommandSource> command() {
         return literal("music")
                 .then(literal("play")
-                        .requires(s -> s.hasPermissionLevel(2))
+                        .requires(require(permission("command.music.play"), 2))
                         .then(argument("song", StringArgumentType.string())
                                 .suggests(this::availableSongFiles)
                                 .executes(this::playSongAutoSelf)
@@ -70,7 +79,7 @@ public class MusicCommand {
                                         .then(argument("id", IdentifierArgumentType.identifier())
                                                 .executes(this::playSongId)))))
                 .then(literal("stop")
-                        .requires(s -> s.hasPermissionLevel(2))
+                        .requires(require(permission("command.music.stop"), 2))
                         .executes(this::stopAllSelf)
                         .then(argument("listeners", EntityArgumentType.players())
                                 .executes(this::stopAll)
@@ -164,7 +173,21 @@ public class MusicCommand {
         return playSong(ctx.getSource(), listeners, path, id);
     }
 
-    private int playSong(ServerCommandSource source, Collection<? extends ServerPlayerEntity> listeners, Path path, Identifier id) {
+    private boolean involvesOther(ServerCommandSource source, Collection<? extends ServerPlayerEntity> players) {
+        ServerPlayerEntity executor = source.getPlayer();
+
+        if (executor == null) {
+            return !players.isEmpty();
+        }
+
+        return players.stream().anyMatch(player -> !executor.equals(player));
+    }
+
+    private int playSong(ServerCommandSource source, Collection<? extends ServerPlayerEntity> listeners, Path path, Identifier id) throws CommandSyntaxException {
+        if (involvesOther(source, listeners) && !Permissions.check(source, permission("command.music.play.other"), 2)) {
+            throw errorNoPermissionPlayOther.create();
+        }
+
         Path relativePath = songDirectory.relativize(path);
 
         CompletableFuture.supplyAsync(() -> {
@@ -231,6 +254,11 @@ public class MusicCommand {
         var listeners = EntityArgumentType.getPlayers(ctx, "listeners");
 
         ServerCommandSource source = ctx.getSource();
+
+        if (involvesOther(source, listeners) && !Permissions.check(source, permission("command.music.stop.other"), 2)) {
+            throw errorNoPermissionStopOther.create();
+        }
+
         Notica api = Notica.getInstance(source.getServer());
 
         int stopped = 0;
@@ -262,6 +290,11 @@ public class MusicCommand {
         Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
 
         ServerCommandSource source = ctx.getSource();
+
+        if (involvesOther(source, listeners) && !Permissions.check(source, permission("command.music.stop.other"), 2)) {
+            throw errorNoPermissionStopOther.create();
+        }
+
         Notica api = Notica.getInstance(source.getServer());
 
         int stopped = 0;

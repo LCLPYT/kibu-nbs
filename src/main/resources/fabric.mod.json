@@ -39,7 +39,8 @@
 		"kibu-hooks": ">=0.54.2",
 		"kibu-translation-api": ">=0.21.0",
 		"kibu-access-lib": ">=0.15.0",
-		"kibu-networking-api": "*"
+		"kibu-networking-api": "*",
+		"fabric-permissions-api-v0": "*"
 	},
 	"suggests": {}
 }

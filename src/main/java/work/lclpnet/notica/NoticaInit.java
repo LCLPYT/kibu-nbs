@@ -29,7 +29,7 @@ public class NoticaInit implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	private NoticaServerPackManager serverPackManager = null;
 
-	@Override
+    @Override
 	public void onInitialize() {
 		Path configDir = FabricLoader.getInstance().getConfigDir().resolve(MOD_ID);
 
@@ -113,5 +113,9 @@ public class NoticaInit implements ModInitializer {
 	 */
 	public static Identifier identifier(String path) {
 		return Identifier.of(MOD_ID, path);
+	}
+
+	public static String permission(String suffix) {
+		return suffix + "." + suffix;
 	}
 }

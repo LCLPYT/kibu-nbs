@@ -51,6 +51,18 @@ Notes outside the vanilla range will be transposed for vanilla players by defaul
 Vanilla clients are still able to play notes outside the vanilla range, by installing the extended notes resource pack.
 The extra notes resource pack can be installed by using `/music set extended_range true` to enable the extended range playback (**vanilla players only**).
 
+## Permissions
+In order to play or stop music, you need to be a server operator (have OP) or you need to have the corresponding permissions:
+
+| Action                | Required permission             |
+|-----------------------|---------------------------------|
+| Play music            | notica.command.music.play       |
+| Play music to others  | notica.command.music.play.other |
+| Stop music            | notica.command.music.stop       |
+| Stop music for others | notica.command.music.stop.other |
+
+Please note that setting the music volume and toggling extended octave range support is always possible.
+
 ## Similar projects
 - [Nota](https://github.com/PinkGoosik/nota) by PinkGoosik (Fabric, Quilt)
 - [NoteBlockAPI](https://github.com/koca2000/NoteBlockAPI) by koca2000 (Bukkit and derivates)
