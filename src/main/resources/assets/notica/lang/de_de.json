@@ -12,6 +12,8 @@
   "notica.music.none_playing": "Momentan werden keine Lieder abgespielt",
   "notica.music.server_pack_requesting": "Für die erweiterte Oktavbereich-Unterstützung wird das Extra-Noten Ressourcenpaket benötigt. Installation wird angefragt...",
   "notica.music.server_pack_prompt": "Das Extra-Noten Ressourcenpaket wird für die erweiterte Oktavbereich-Unterstützung benötigt.",
-  "notica.music.server_pack_failed": "Das Extra-Noten Ressourcenpaket konnte nicht installiert werden. Erweiterter Oktavbereich wird deaktiviert.",
-  "notica.music.server_pack_success": "Das Extra-Noten Ressourcenpaket wurde erfolgreich installiert. Erweiterter Oktavbereich wird aktiviert."
+  "notica.music.server_pack_failed": "Das Extra-Noten Ressourcenpaket konnte nicht installiert werden. Stelle sicher, dass in der Server-Liste die Option \"Server-Ressourcenpakete\" für diesen Server aktiviert ist. Erweiterter Oktavbereich wird deaktiviert...",
+  "notica.music.server_pack_success": "Das Extra-Noten Ressourcenpaket wurde erfolgreich installiert. Erweiterter Oktavbereich wird aktiviert.",
+  "kibu.proto.notica.version.too_old": "Dein Client nutzt eine ältere Version von Notica als der Server. Bitte aktualisiere Notica, damit alles funktioniert.",
+  "kibu.proto.notica.version.too_new": "Dein Client nutzt eine neuere Version von Notica als der Server. Manche Dinge werden nicht funktionieren."
 }

@@ -1,14 +1,9 @@
 package work.lclpnet.notica.networking;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientLoginNetworkHandler;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.PacketCallbacks;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
+import work.lclpnet.kibu.networking.protocol.ClientProtocolHandler;
 import work.lclpnet.notica.api.PlayerConfig;
 import work.lclpnet.notica.api.SongSlice;
 import work.lclpnet.notica.impl.ClientMusicBackend;
@@ -18,9 +13,6 @@ import work.lclpnet.notica.network.NoticaNetworking;
 import work.lclpnet.notica.network.packet.*;
 import work.lclpnet.notica.util.ByteHelper;
 import work.lclpnet.notica.util.PlayerConfigEntry;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 public class NoticaClientNetworking {
 
@@ -38,19 +30,12 @@ public class NoticaClientNetworking {
     }
 
     public void register() {
+        new ClientProtocolHandler(NoticaNetworking.PROTOCOL, logger).register();
+
         ClientPlayNetworking.registerGlobalReceiver(PlaySongS2CPacket.ID, this::onPlaySong);
         ClientPlayNetworking.registerGlobalReceiver(RespondSongS2CPacket.ID, this::onRespondSong);
         ClientPlayNetworking.registerGlobalReceiver(StopSongBidiPacket.ID, this::onStopSong);
         ClientPlayNetworking.registerGlobalReceiver(MusicOptionsS2CPacket.ID, this::onMusicOptionsSync);
-
-        ClientLoginNetworking.registerGlobalReceiver(NoticaNetworking.VERSION_LOGIN_CHANNEL, this::onQueryVersion);
-    }
-
-    private CompletableFuture<PacketByteBuf> onQueryVersion(MinecraftClient client, ClientLoginNetworkHandler handler, PacketByteBuf buf, Consumer<PacketCallbacks> callbacksConsumer) {
-        PacketByteBuf response = PacketByteBufs.create();
-        response.writeVarInt(NoticaNetworking.PROTOCOL_VERSION);
-
-        return CompletableFuture.completedFuture(response);
     }
 
     private void onPlaySong(PlaySongS2CPacket payload, ClientPlayNetworking.Context context) {

@@ -2,13 +2,15 @@ package work.lclpnet.notica.network;
 
 import com.mojang.authlib.GameProfile;
 import net.fabricmc.fabric.api.networking.v1.*;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerLoginNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import work.lclpnet.kibu.hook.player.PlayerConnectionHooks;
+import work.lclpnet.kibu.networking.protocol.Protocol;
+import work.lclpnet.kibu.networking.protocol.ServerProtocolHandler;
 import work.lclpnet.notica.NoticaInit;
 import work.lclpnet.notica.api.SongSlice;
 import work.lclpnet.notica.api.data.Song;
@@ -22,14 +24,14 @@ import java.util.UUID;
 
 public class NoticaNetworking {
 
-    public static final Identifier VERSION_LOGIN_CHANNEL = NoticaInit.identifier("version");
-    public static final int PROTOCOL_VERSION = 1;
+    public static final Protocol PROTOCOL = new Protocol(NoticaInit.identifier("version"), 1);
     public static final int MAX_PACKET_BYTES = 0x800000;  // packet size limit imposed by mc
     private static final int RESET_MILLIS = 20_000, MAX_REQUESTS = 40;
     private static NoticaNetworking instance = null;
 
     private final Logger logger;
     private final Map<UUID, PlayerData> playerData = new HashMap<>();
+    private @Nullable ServerProtocolHandler protocolHandler = null;
 
     public NoticaNetworking(Logger logger) {
         this.logger = logger;
@@ -37,7 +39,8 @@ public class NoticaNetworking {
     }
 
     public void register() {
-        ServerLoginNetworking.registerGlobalReceiver(VERSION_LOGIN_CHANNEL, this::receiveLoginVersion);
+        protocolHandler = new ServerProtocolHandler(PROTOCOL, logger);
+        protocolHandler.register();
 
         var playS2C = PayloadTypeRegistry.playS2C();
         playS2C.register(MusicOptionsS2CPacket.ID, MusicOptionsS2CPacket.CODEC);
@@ -52,36 +55,8 @@ public class NoticaNetworking {
         ServerPlayNetworking.registerGlobalReceiver(RequestSongC2SPacket.ID, this::onRequestSong);
         ServerPlayNetworking.registerGlobalReceiver(StopSongBidiPacket.ID, this::onSongStopped);
 
-        ServerLoginConnectionEvents.QUERY_START.register(this::onLoginStart);
         ServerLoginConnectionEvents.DISCONNECT.register(this::onLoginDisconnect);
         PlayerConnectionHooks.QUIT.register(this::onQuit);
-    }
-
-    private void onLoginStart(ServerLoginNetworkHandler handler, MinecraftServer server, LoginPacketSender sender, ServerLoginNetworking.LoginSynchronizer synchronizer) {
-        // send notica protocol version query
-        sender.sendPacket(VERSION_LOGIN_CHANNEL, PacketByteBufs.empty());
-    }
-
-    private void receiveLoginVersion(MinecraftServer server, ServerLoginNetworkHandler handler, boolean understood,
-                                     PacketByteBuf buf, ServerLoginNetworking.LoginSynchronizer synchronizer, PacketSender sender) {
-        int version = 0;
-
-        if (understood) {
-            // the client understood the notica protocol version query
-            version = buf.readVarInt();
-        }
-
-        logger.debug("Received protocol version {}", version);
-
-        GameProfile profile = ((ServerLoginNetworkHandlerAccessor) handler).getProfile();
-
-        if (profile == null) {
-            logger.error("Game profile is not set, but should be initialized by now...");
-            return;
-        }
-
-        UUID uuid = profile.getId();
-        getData(uuid).version = version;
     }
 
     private void onLoginDisconnect(ServerLoginNetworkHandler handler, MinecraftServer server) {
@@ -166,7 +141,7 @@ public class NoticaNetworking {
     }
 
     public boolean understandsProtocol(ServerPlayerEntity player) {
-        return getData(player).understandsProtocol();
+        return protocolHandler != null && protocolHandler.understands(player);
     }
 
     public static NoticaNetworking getInstance() {
@@ -177,7 +152,6 @@ public class NoticaNetworking {
     private static class PlayerData {
         private long lastRequest = 0L;
         private int count = 0;
-        private int version = 0;
 
         public boolean throttle() {
             long before = lastRequest;
@@ -189,10 +163,6 @@ public class NoticaNetworking {
             }
 
             return ++count >= MAX_REQUESTS;
-        }
-
-        public boolean understandsProtocol() {
-            return version == PROTOCOL_VERSION;
         }
     }
 }
